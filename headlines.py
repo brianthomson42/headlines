@@ -14,7 +14,9 @@ RSS_FEEDS = {'bbc': 'http://feeds.bbci.co.uk/news/rss.xml',
              'ft': 'https://www.ft.com/?edition=international&format=rss'}
 
 DEFAULTS = {'publication': 'bbc',
-            'city': 'London, UK'}
+            'city': 'London, UK',
+            'currency_from': 'GBP',
+            'currency_to': 'USD'}
 
 @app.route('/')
 def home():
@@ -29,7 +31,16 @@ def home():
         city = DEFAULTS['city']
     weather = get_weather(city)
 
-    return render_template('home.html', articles=articles, weather=weather)
+    # get customized currency based on user input or default
+    currency_from = request.args.get("currency_from")
+    if not currency_from:
+        currency_from = DEFAULTS['currency_from']
+    currency_to = request.args.get("currency_to")
+    if not currency_to:
+        currency_to = DEFAULTS['currency_to']
+    rate = get_rate(currency_from, currency_to)
+    return render_template('home.html', articles=articles, weather=weather,
+                           currency_from=currency_from, currency_to=currency_to, rate=rate)
 
 
 def get_news(query):
@@ -60,6 +71,21 @@ def get_weather(query):
                    'city':parsed['name'],
                    'country': parsed['sys']['country']}
     return weather
+
+
+def get_rate(frm, to):
+
+    # Open Exchange Rate
+    OER_API_KEY = '24169dc1e2964d679d20ed18853b0a9e'
+    api_url = 'https://openexchangerates.org//api/latest.json?app_id={}' \
+              .format(OER_API_KEY)
+    all_currency = urllib.request.urlopen(api_url).read()
+
+    parsed = json.loads(all_currency).get('rates')
+    from_rate = parsed.get(frm.upper())
+    to_rate = parsed.get(to.upper())
+
+    return to_rate/from_rate
 
 
 if __name__ == "__main__":
