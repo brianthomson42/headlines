@@ -38,9 +38,15 @@ def home():
     currency_to = request.args.get("currency_to")
     if not currency_to:
         currency_to = DEFAULTS['currency_to']
-    rate = get_rate(currency_from, currency_to)
-    return render_template('home.html', articles=articles, weather=weather,
-                           currency_from=currency_from, currency_to=currency_to, rate=rate)
+    rate, currencies = get_rate(currency_from, currency_to)
+
+    return render_template('home.html',
+                           articles=articles,
+                           weather=weather,
+                           currency_from=currency_from,
+                           currency_to=currency_to,
+                           rate=rate,
+                           currencies=sorted(currencies))
 
 
 def get_news(query):
@@ -85,7 +91,7 @@ def get_rate(frm, to):
     from_rate = parsed.get(frm.upper())
     to_rate = parsed.get(to.upper())
 
-    return to_rate/from_rate
+    return (to_rate/from_rate, parsed.keys())
 
 
 if __name__ == "__main__":
